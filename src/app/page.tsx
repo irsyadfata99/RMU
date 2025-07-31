@@ -14,16 +14,26 @@ const Slider = dynamic(() => import("react-slick"), { ssr: false });
 
 // Mock data for the divisions. You can replace this with data from your backend later.
 const divisions = [
-  { name: "Divisi Robotika", image: "/template-hero.png" },
-  { name: "Divisi AI & Machine Learning", image: "/template-hero.png" },
-  { name: "Divisi Web Development", image: "/template-hero.png" },
-  { name: "Divisi Mobile Apps", image: "/template-hero.png" },
-  { name: "Divisi Game Development", image: "/template-hero.png" },
-  { name: "Divisi UI/UX Design", image: "/template-hero.png" },
+  { name: "Divisi Sosial", image: "/template-hero.png" },
+  { name: "Divisi Pendidikan", image: "/template-hero.png" },
+  { name: "Divisi Seni Budaya", image: "/template-hero.png" },
+  { name: "Divisi Hukum", image: "/template-hero.png" },
+  { name: "Divisi Ekonomi", image: "/template-hero.png" },
+  { name: "Divisi Kesehatan", image: "/template-hero.png" },
+  { name: "Divisi Humas", image: "/template-hero.png" },
+  { name: "Divisi HRD", image: "/template-hero.png" },
+  { name: "Divisi Kesekretariatan", image: "/template-hero.png" },
+  { name: "Divisi Kepemudaan", image: "/template-hero.png" },
+  { name: "Divisi Keamanan", image: "/template-hero.png" },
+  { name: "Divisi Pemberdayaan Perempuan", image: "/template-hero.png" },
 ];
 
 export default function Home() {
-  const sliderImages = ["/template-hero.png", "/template-hero-1.png", "/template-hero.png"];
+  const sliderImages = [
+    "/template-hero.png",
+    "/template-hero-1.png",
+    "/template-hero.png",
+  ];
 
   // Explicitly type the animation variants with the Variants type
   const cardVariants: Variants = {
@@ -66,8 +76,13 @@ export default function Home() {
       <section className="bg-gray-50 dark:bg-gray-800 py-20 sm:py-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-[#3d4a98]">Divisi Kami</h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 mt-4 max-w-2xl mx-auto">Jelajahi berbagai divisi yang kami tawarkan, masing-masing dengan fokus dan keahlian unik.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#3d4a98]">
+              Divisi Kami
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-400 mt-4 max-w-2xl mx-auto">
+              Jelajahi berbagai divisi yang kami tawarkan, masing-masing dengan
+              fokus dan keahlian unik.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -82,10 +97,18 @@ export default function Home() {
                 variants={cardVariants}
               >
                 <div className="relative w-full h-56">
-                  <Image src={division.image} alt={`Gambar untuk ${division.name}`} fill style={{ objectFit: "cover" }} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                  <Image
+                    src={division.image}
+                    alt={`Gambar untuk ${division.name}`}
+                    fill
+                    style={{ objectFit: "cover" }}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-[#3d4a98]">{division.name}</h3>
+                  <h3 className="text-xl font-semibold text-[#3d4a98]">
+                    {division.name}
+                  </h3>
                 </div>
               </motion.div>
             ))}
