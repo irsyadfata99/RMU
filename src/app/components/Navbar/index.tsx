@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IoIosArrowDown } from "react-icons/io";
@@ -117,7 +116,13 @@ const navItems: NavItem[] = [
 
 const FrontHeader = () => {
   const [isSideMenuOpen, setSideMenue] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+
+  // Ensure we're on the client side before rendering dynamic content
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   function openSideMenu() {
     setSideMenue(true);
@@ -136,32 +141,15 @@ const FrontHeader = () => {
             <section className="flex items-center gap-10">
               <div className="flex-shrink-0 flex items-center">
                 <Link href="/">
-                  <Image src="next.svg" alt="Telkom Indonesia Logo" width={180} height={40} priority className="object-contain" />
+                  {/* Option 1: Use regular img tag - RECOMMENDED */}
+                  <img src="/next.svg" alt="Telkom Indonesia Logo" className="h-10 w-auto object-contain" />
                 </Link>
               </div>
-
-              {isSideMenuOpen && <MobileNav closeSideMenu={closeSideMenu} />}
 
               {/* Desktop Navigation */}
               <div className="hidden lg:flex items-center gap-4 transition-all">
                 {navItems.map((d, i) => (
-                  <Link key={i} href={d.link ?? "#"} className="relative group px-2 py-3 transition-all">
-                    <p className="flex cursor-pointer items-center gap-2 text-gray-600 group-hover:text-red-600">
-                      <span className="text-sm font-medium">{d.label}</span>
-                      {d.children && <IoIosArrowDown className="rotate-180 transition-all group-hover:rotate-0" />}
-                    </p>
-
-                    {/* dropdown */}
-                    {d.children && (
-                      <div className="absolute right-0 top-10 hidden w-auto flex-col gap-1 rounded-lg bg-white py-3 shadow-md border border-gray-100 transition-all group-hover:flex z-50">
-                        {d.children.map((ch, i) => (
-                          <Link key={i} href={ch.link ?? "#"} className="flex cursor-pointer items-center py-1 pl-6 pr-8 text-gray-700 hover:text-red-600">
-                            <span className="whitespace-nowrap text-sm">{ch.label}</span>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </Link>
+                  <DesktopNavItem key={i} item={d} />
                 ))}
               </div>
             </section>
@@ -181,9 +169,45 @@ const FrontHeader = () => {
           </div>
         </div>
       </header>
+
+      {/* Mobile Menu - Only render on client side */}
+      {isClient && isSideMenuOpen && <MobileNav closeSideMenu={closeSideMenu} />}
     </div>
   );
 };
+
+// Separate component for desktop navigation items
+function DesktopNavItem({ item }: { item: NavItem }) {
+  if (item.children) {
+    // For items with children, use div to avoid nested links
+    return (
+      <div className="relative group px-2 py-3 transition-all">
+        <div className="flex cursor-pointer items-center gap-2 text-gray-600 group-hover:text-red-600">
+          <span className="text-sm font-medium">{item.label}</span>
+          <IoIosArrowDown className="rotate-180 transition-all group-hover:rotate-0" />
+        </div>
+
+        {/* dropdown */}
+        <div className="absolute right-0 top-10 hidden w-auto flex-col gap-1 rounded-lg bg-white py-3 shadow-md border border-gray-100 transition-all group-hover:flex z-50">
+          {item.children.map((ch, i) => (
+            <Link key={i} href={ch.link ?? "#"} className="flex cursor-pointer items-center py-1 pl-6 pr-8 text-gray-700 hover:text-red-600">
+              <span className="whitespace-nowrap text-sm">{ch.label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // For items without children, use Link normally
+  return (
+    <Link href={item.link ?? "#"} className="relative group px-2 py-3 transition-all">
+      <div className="flex cursor-pointer items-center gap-2 text-gray-600 group-hover:text-red-600">
+        <span className="text-sm font-medium">{item.label}</span>
+      </div>
+    </Link>
+  );
+}
 
 function MobileNav({ closeSideMenu }: { closeSideMenu: () => void }) {
   return (

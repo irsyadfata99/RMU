@@ -25,7 +25,7 @@ const FrontFooter = () => {
           <div className="space-y-6">
             {/* Logo */}
             <div className="mb-8">
-              <Image src="next.svg" alt="RMU Logo" width={200} height={60} className="object-contain filter brightness-0 invert" />
+              <img src="/next.svg" alt="Telkom Indonesia Logo" className="h-10 w-auto object-contain" />
               <p className="text-sm text-gray-400 mt-2">Rumah Masyarakat Unggul</p>
             </div>
 
