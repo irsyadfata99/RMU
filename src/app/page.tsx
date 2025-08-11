@@ -6,7 +6,6 @@ import FrontHeader from "./components/Navbar"; // Assuming Navbar.tsx exists
 import Hero from "./components/Hero";
 import Card from "./components/Card";
 import FoundationDivisionsSection from "./components/Divisions";
-import News from "./components/news";
 import FrontFooter from "./components/Footer"; // Assuming Footer.tsx exists
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -54,7 +53,6 @@ export default function Home() {
       <Hero />
       <Card />
       <FoundationDivisionsSection />
-      <News />
       <FrontFooter />
     </div>
   );

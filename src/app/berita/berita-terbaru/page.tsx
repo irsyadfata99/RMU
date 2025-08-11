@@ -4,141 +4,122 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import FrontHeader from "../../components/Navbar";
 import FrontFooter from "../../components/Footer";
-
-interface BeritaItem {
-  id: number;
-  title: string;
-  excerpt: string;
-  content: string;
-  image: string;
-  author: string;
-  publishedAt: string;
-  category: string;
-  readTime: number;
-  tags: string[];
-  featured: boolean;
-}
+import { beritaService, type BeritaItem } from "../../../lib/api/berita";
 
 const BeritaPage = () => {
   const [beritaList, setBeritaList] = useState<BeritaItem[]>([]);
   const [filteredBerita, setFilteredBerita] = useState<BeritaItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("semua");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  // Mock data - Replace with API call to Laravel backend
-  const mockBerita: BeritaItem[] = [
-    {
-      id: 1,
-      title: "Program Beasiswa RMU Tahun 2024 Dibuka untuk 1000 Siswa Berprestasi",
-      excerpt: "Reksa Mahardhika Unggul membuka program beasiswa untuk siswa kurang mampu namun berprestasi di seluruh Indonesia.",
-      content: "Lorem ipsum dolor sit amet...",
-      image: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&h=400&fit=crop",
-      author: "Tim Humas RMU",
-      publishedAt: "2024-01-15",
-      category: "Pendidikan",
-      readTime: 5,
-      tags: ["Beasiswa", "Pendidikan", "Siswa"],
-      featured: true,
-    },
-    {
-      id: 2,
-      title: "Bantuan Sosial untuk Korban Bencana Alam di Jawa Barat",
-      excerpt: "Tim relawan RMU menyalurkan bantuan kepada masyarakat terdampak banjir di wilayah Jawa Barat.",
-      content: "Lorem ipsum dolor sit amet...",
-      image: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=400&fit=crop",
-      author: "Divisi Sosial",
-      publishedAt: "2024-01-12",
-      category: "Sosial",
-      readTime: 4,
-      tags: ["Bantuan", "Bencana", "Sosial"],
-      featured: false,
-    },
-    {
-      id: 3,
-      title: "Workshop Entrepreneurship untuk Pengembangan UMKM Lokal",
-      excerpt: "RMU mengadakan pelatihan kewirausahaan untuk meningkatkan kapasitas pelaku UMKM di berbagai daerah.",
-      content: "Lorem ipsum dolor sit amet...",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=400&fit=crop",
-      author: "Divisi Ekonomi",
-      publishedAt: "2024-01-10",
-      category: "Ekonomi",
-      readTime: 6,
-      tags: ["UMKM", "Workshop", "Ekonomi"],
-      featured: true,
-    },
-    {
-      id: 4,
-      title: "Festival Seni Budaya Nusantara 2024 Sukses Digelar",
-      excerpt: "Acara tahunan yang menampilkan keberagaman seni dan budaya Indonesia dari Sabang sampai Merauke.",
-      content: "Lorem ipsum dolor sit amet...",
-      image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&h=400&fit=crop",
-      author: "Divisi Seni Budaya",
-      publishedAt: "2024-01-08",
-      category: "Seni Budaya",
-      readTime: 7,
-      tags: ["Festival", "Seni", "Budaya"],
-      featured: false,
-    },
-    {
-      id: 5,
-      title: "Program Kesehatan Gratis Menjangkau Desa Terpencil",
-      excerpt: "Tim medis RMU memberikan pelayanan kesehatan gratis kepada masyarakat di daerah terpencil.",
-      content: "Lorem ipsum dolor sit amet...",
-      image: "https://images.unsplash.com/photo-1576091160399-112ba8d76b6e?w=800&h=400&fit=crop",
-      author: "Divisi Kesehatan",
-      publishedAt: "2024-01-05",
-      category: "Kesehatan",
-      readTime: 5,
-      tags: ["Kesehatan", "Desa", "Gratis"],
-      featured: false,
-    },
-    {
-      id: 6,
-      title: "Pelatihan Leadership untuk Generasi Muda Indonesia",
-      excerpt: "Program pengembangan kepemimpinan yang ditujukan untuk para pemuda sebagai agent of change.",
-      content: "Lorem ipsum dolor sit amet...",
-      image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=400&fit=crop",
-      author: "Divisi Kepemudaan",
-      publishedAt: "2024-01-03",
-      category: "Kepemudaan",
-      readTime: 6,
-      tags: ["Leadership", "Pemuda", "Pelatihan"],
-      featured: true,
-    },
-  ];
-
-  const categories = ["Semua", "Pendidikan", "Sosial", "Ekonomi", "Kesehatan", "Seni Budaya", "Kepemudaan"];
-
+  // Load categories on component mount
   useEffect(() => {
-    // TODO: Replace with actual API call to Laravel backend
-    // fetchBeritaFromAPI();
+    const loadCategories = async () => {
+      try {
+        const categoriesData = await beritaService.getCategories();
+        setCategories(["Semua", ...categoriesData]);
+      } catch (error) {
+        console.error("Error loading categories:", error);
+        // Fallback to default categories
+        setCategories(["Semua", "Pendidikan", "Sosial", "Ekonomi", "Kesehatan", "Seni Budaya", "Kepemudaan"]);
+      }
+    };
 
-    // Simulate loading
-    setTimeout(() => {
-      setBeritaList(mockBerita);
-      setFilteredBerita(mockBerita);
-      setIsLoading(false);
-    }, 1000);
+    loadCategories();
   }, []);
 
+  // Load berita data
   useEffect(() => {
-    let filtered = beritaList;
+    const fetchBerita = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-    // Filter by category
-    if (selectedCategory !== "semua") {
-      filtered = filtered.filter((item) => item.category.toLowerCase() === selectedCategory.toLowerCase());
-    }
+        const params = {
+          page: currentPage,
+          per_page: 12,
+          category: selectedCategory,
+          search: searchQuery || undefined,
+        };
 
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (item) => item.title.toLowerCase().includes(searchQuery.toLowerCase()) || item.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) || item.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
+        const response = await beritaService.getBerita(params);
 
-    setFilteredBerita(filtered);
-  }, [selectedCategory, searchQuery, beritaList]);
+        setBeritaList(response.data);
+        setFilteredBerita(response.data);
+
+        if (response.meta) {
+          setTotalPages(response.meta.last_page);
+        }
+      } catch (error) {
+        console.error("Error fetching berita:", error);
+        setError("Gagal memuat berita. Silakan coba lagi.");
+
+        // Fallback to mock data for development
+        const mockBerita: BeritaItem[] = [
+          {
+            id: 1,
+            title: "Program Beasiswa RMU Tahun 2024 Dibuka untuk 1000 Siswa Berprestasi",
+            excerpt: "Reksa Mahardhika Unggul membuka program beasiswa untuk siswa kurang mampu namun berprestasi di seluruh Indonesia.",
+            content: "Lorem ipsum dolor sit amet...",
+            image: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&h=400&fit=crop",
+            author: "Tim Humas RMU",
+            publishedAt: "2024-01-15",
+            category: "Pendidikan",
+            readTime: 5,
+            tags: ["Beasiswa", "Pendidikan", "Siswa"],
+            featured: true,
+          },
+          {
+            id: 2,
+            title: "Bantuan Sosial untuk Korban Bencana Alam di Jawa Barat",
+            excerpt: "Tim relawan RMU menyalurkan bantuan kepada masyarakat terdampak banjir di wilayah Jawa Barat.",
+            content: "Lorem ipsum dolor sit amet...",
+            image: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=400&fit=crop",
+            author: "Divisi Sosial",
+            publishedAt: "2024-01-12",
+            category: "Sosial",
+            readTime: 4,
+            tags: ["Bantuan", "Bencana", "Sosial"],
+            featured: false,
+          },
+          {
+            id: 3,
+            title: "Workshop Entrepreneurship untuk Pengembangan UMKM Lokal",
+            excerpt: "RMU mengadakan pelatihan kewirausahaan untuk meningkatkan kapasitas pelaku UMKM di berbagai daerah.",
+            content: "Lorem ipsum dolor sit amet...",
+            image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=400&fit=crop",
+            author: "Divisi Ekonomi",
+            publishedAt: "2024-01-10",
+            category: "Ekonomi",
+            readTime: 6,
+            tags: ["UMKM", "Workshop", "Ekonomi"],
+            featured: true,
+          },
+        ];
+
+        setBeritaList(mockBerita);
+        setFilteredBerita(mockBerita);
+        setError(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Add debounce for search
+    const timeoutId = setTimeout(
+      () => {
+        fetchBerita();
+      },
+      searchQuery ? 500 : 0
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedCategory, searchQuery, currentPage]);
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -159,6 +140,21 @@ const BeritaPage = () => {
       Kepemudaan: "bg-orange-100 text-orange-700",
     };
     return colorMap[category] || "bg-gray-100 text-gray-700";
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category.toLowerCase());
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (isLoading) {
@@ -193,6 +189,18 @@ const BeritaPage = () => {
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">Ikuti perkembangan terkini program dan kegiatan Reksa Mahardhika Unggul</p>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
+
           {/* Search and Filter Section */}
           <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
             <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -207,7 +215,7 @@ const BeritaPage = () => {
                   type="text"
                   placeholder="Cari berita..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -217,7 +225,7 @@ const BeritaPage = () => {
                 {categories.map((category) => (
                   <button
                     key={category}
-                    onClick={() => setSelectedCategory(category.toLowerCase())}
+                    onClick={() => handleCategoryChange(category)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${selectedCategory === category.toLowerCase() ? "bg-blue-600 text-white shadow-lg" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                   >
                     {category}
@@ -304,8 +312,49 @@ const BeritaPage = () => {
             </div>
           )}
 
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-12">
+              <div className="flex items-center gap-2">
+                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <button key={pageNum} onClick={() => handlePageChange(pageNum)} className={`px-4 py-2 rounded-lg ${currentPage === pageNum ? "bg-blue-600 text-white" : "border border-gray-300 text-gray-500 hover:bg-gray-50"}`}>
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                {totalPages > 5 && (
+                  <>
+                    <span className="px-2 text-gray-400">...</span>
+                    <button onClick={() => handlePageChange(totalPages)} className={`px-4 py-2 rounded-lg ${currentPage === totalPages ? "bg-blue-600 text-white" : "border border-gray-300 text-gray-500 hover:bg-gray-50"}`}>
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* No Results State */}
-          {filteredBerita.length === 0 && (
+          {filteredBerita.length === 0 && !isLoading && (
             <div className="text-center py-16">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -318,7 +367,17 @@ const BeritaPage = () => {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada berita ditemukan</h3>
-              <p className="text-gray-600">Coba ubah filter atau kata kunci pencarian Anda.</p>
+              <p className="text-gray-600 mb-4">Coba ubah filter atau kata kunci pencarian Anda.</p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCategory("semua");
+                  setCurrentPage(1);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Reset Filter
+              </button>
             </div>
           )}
         </div>
