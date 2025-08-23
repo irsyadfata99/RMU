@@ -1,3 +1,4 @@
+// pages/admin/dashboard.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,6 +7,7 @@ import AdminHeader from "../../components/AdminHeader";
 import StatCards from "../../components/StatCards";
 import ArticleTable from "../../components/ArtikelTable";
 import ArticleForm from "../../components/ArtikelForm";
+import MemberManagement from "../../components/Dashboard-Admin/MemberManagement";
 
 interface Article {
   id: number;
@@ -29,6 +31,8 @@ interface User {
   role: "admin" | "editor";
 }
 
+type ActiveTab = "articles" | "members";
+
 const AdminDashboard = () => {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -36,6 +40,7 @@ const AdminDashboard = () => {
   const [showArticleForm, setShowArticleForm] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("articles");
 
   // Sample articles data
   const sampleArticles: Article[] = [
@@ -168,6 +173,13 @@ const AdminDashboard = () => {
     setShowArticleForm(true);
   };
 
+  const handleTabChange = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    // Reset article form when switching tabs
+    setShowArticleForm(false);
+    setEditingArticle(null);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
@@ -184,14 +196,57 @@ const AdminDashboard = () => {
       <AdminHeader currentUser={currentUser} />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {!showArticleForm ? (
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2 mb-8">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => handleTabChange("articles")}
+              className={`flex-1 py-3 px-6 text-center font-medium rounded-lg transition-all duration-200 ${activeTab === "articles" ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <span>📝</span>
+                <span>Manajemen Artikel</span>
+              </div>
+            </button>
+            <button
+              onClick={() => handleTabChange("members")}
+              className={`flex-1 py-3 px-6 text-center font-medium rounded-lg transition-all duration-200 ${activeTab === "members" ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <span>👥</span>
+                <span>Manajemen Anggota</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Content based on active tab */}
+        {activeTab === "articles" && (
           <>
-            <StatCards articles={articles} />
-            <ArticleTable articles={articles} onEdit={handleEditArticle} onDelete={handleDeleteArticle} onShowForm={handleShowForm} />
+            {!showArticleForm ? (
+              <>
+                <div className="mb-8">
+                  <h1 className="text-3xl font-bold text-gray-800 mb-2">Manajemen Artikel</h1>
+                  <p className="text-gray-600">Kelola artikel dan konten yang akan ditampilkan di website</p>
+                </div>
+                <StatCards articles={articles} />
+                <ArticleTable articles={articles} onEdit={handleEditArticle} onDelete={handleDeleteArticle} onShowForm={handleShowForm} />
+              </>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <button onClick={handleCancelForm} className="text-gray-600 hover:text-gray-900 flex items-center gap-2">
+                    <span>←</span>
+                    <span>Kembali ke Daftar Artikel</span>
+                  </button>
+                </div>
+                <ArticleForm editingArticle={editingArticle} currentUser={currentUser} onSave={handleSaveArticle} onCancel={handleCancelForm} />
+              </div>
+            )}
           </>
-        ) : (
-          <ArticleForm editingArticle={editingArticle} currentUser={currentUser} onSave={handleSaveArticle} onCancel={handleCancelForm} />
         )}
+
+        {activeTab === "members" && <MemberManagement currentUser={currentUser} />}
       </div>
     </div>
   );
