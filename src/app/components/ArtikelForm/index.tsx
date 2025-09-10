@@ -18,7 +18,23 @@ interface Article {
 }
 
 interface User {
-  username: string;
+  id: number;
+  email: string;
+  last_login_ip: string | null;
+  last_login_device: string | null;
+  last_active_at: string | null;
+  role: string;
+  created_at: string;
+  updated_at: string;
+  admin?: {
+    adminId: number;
+    user_id: number;
+    name: string;
+    phone: string;
+  } | null;
+  supervisor?: object | null;
+  employee?: object | null;
+  member?: object | null;
 }
 
 interface ArticleFormProps {
@@ -50,7 +66,7 @@ const ArticleForm = ({ editingArticle, currentUser, onSave, onCancel }: ArticleF
         excerpt: "",
         content: "",
         image: "",
-        author: currentUser?.username || "",
+        author: currentUser?.admin?.name || "",
         category: "Pendidikan",
         tags: [],
         featured: false,
@@ -162,7 +178,7 @@ const ArticleForm = ({ editingArticle, currentUser, onSave, onCancel }: ArticleF
               value={articleForm.author}
               onChange={(e) => setArticleForm({ ...articleForm, author: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder={currentUser?.username || "Nama penulis"}
+              placeholder={currentUser?.admin?.name || "Nama penulis"}
             />
           </div>
         </div>

@@ -5,7 +5,6 @@ export const exportMembersToExcel = (members: Member[], fileName: string = "data
   // Prepare data for export
   const exportData = members.map((member, index) => ({
     No: index + 1,
-    "ID Anggota": member.id,
     "NIK KTP": member.nikKtp,
     "Nama Lengkap": member.namaLengkap,
     "Alamat Lengkap": member.alamatLengkap,
