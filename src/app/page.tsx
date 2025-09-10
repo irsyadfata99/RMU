@@ -2,21 +2,22 @@
 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import FrontHeader from "./components/Navbar"; // Assuming Navbar.tsx exists
+import FrontHeader from "./components/Navbar";
 import Hero from "./components/Hero";
 import Card from "./components/Card";
 import FoundationDivisionsSection from "./components/Divisions";
-import FrontFooter from "./components/Footer"; // Assuming Footer.tsx exists
+import FrontFooter from "./components/Footer";
 import dynamic from "next/dynamic";
-import Image from "next/image";
-import { motion, Variants } from "framer-motion"; // Import Variants type
+import { motion, Variants } from "framer-motion";
+import { Toaster } from "react-hot-toast"; 
+import toast from "react-hot-toast";
+import { useEffect } from "react";
 
 const Slider = dynamic(() => import("react-slick"), { ssr: false });
 
 export default function Home() {
   const sliderImages = ["/template-hero.png", "/template-hero-1.png", "/template-hero.png"];
 
-  // Explicitly type the animation variants with the Variants type
   const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
@@ -30,25 +31,22 @@ export default function Home() {
     }),
   };
 
-  const settings = {
-    dots: false,
-    infinite: true,
-    autoplay: true,
-    speed: 800,
-    autoplaySpeed: 4000,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    arrows: false,
-  };
-
-  // Explicitly type the animation variants with the Variants type
   const fadeUp: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
   };
 
+  useEffect(() => {
+    const success = sessionStorage.getItem("registerSuccess");
+    if (success) {
+      toast.success("Pendaftaran anggota berhasil!");
+      sessionStorage.removeItem("registerSuccess"); 
+    }
+  }, []);
+
   return (
     <div className="bg-white text-gray-700 dark:text-gray-300 min-h-screen">
+      <Toaster position="top-right" reverseOrder={false} /> 
       <FrontHeader />
       <Hero />
       <Card />

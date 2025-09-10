@@ -26,9 +26,22 @@ interface Article {
 
 interface User {
   id: number;
-  username: string;
   email: string;
-  role: "admin" | "editor";
+  last_login_ip: string | null;
+  last_login_device: string | null;
+  last_active_at: string | null;
+  role: string;
+  created_at: string;
+  updated_at: string;
+  admin?: {
+    adminId: number;
+    user_id: number;
+    name: string;
+    phone: string;
+  } | null;
+  supervisor?: object | null;
+  employee?: object | null;
+  member?: object | null;
 }
 
 type ActiveTab = "articles" | "members";
@@ -41,6 +54,13 @@ const AdminDashboard = () => {
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>("articles");
+  const getRole = (user: User): string => {
+    if (user.admin) return "admin";
+    if (user.supervisor) return "supervisor";
+    if (user.employee) return "employee";
+    if (user.member) return "member";
+    return "unknown";
+  };
 
   // Sample articles data
   const sampleArticles: Article[] = [
@@ -102,8 +122,15 @@ const AdminDashboard = () => {
         return;
       }
 
-      setCurrentUser(JSON.parse(savedUser));
+      const parsedUser: User = JSON.parse(savedUser);
+
+      // set user + role
+      setCurrentUser({
+        ...parsedUser,
+        role: getRole(parsedUser),
+      } as User & { role: string });
     };
+
 
     // Load articles
     const loadArticles = () => {
@@ -128,7 +155,7 @@ const AdminDashboard = () => {
       excerpt: articleData.excerpt || "",
       content: articleData.content || "",
       image: articleData.image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop",
-      author: articleData.author || currentUser?.username || "",
+      author: articleData.author || currentUser?.admin?.name || "",
       publishedAt: editingArticle ? editingArticle.publishedAt : new Date().toISOString().split("T")[0],
       category: articleData.category || "Pendidikan",
       readTime: Math.ceil((articleData.content?.length || 0) / 200),

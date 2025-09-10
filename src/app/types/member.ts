@@ -1,6 +1,7 @@
 // types/member.ts
 export interface Member {
-  id: string; // Unique ID based on wilayah
+  id: number; 
+  memberCode: string; 
   nikKtp: string;
   namaLengkap: string;
   alamatLengkap: string;

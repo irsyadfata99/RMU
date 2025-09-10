@@ -1,6 +1,6 @@
-// components/MemberForm.tsx
 import React, { useState, useEffect } from "react";
-import { Member, MemberFormData, MemberFormErrors, wilayahOptions, WilayahCode } from "../../types/member";
+import { Member, MemberFormData, MemberFormErrors, WilayahCode } from "../../types/member";
+import axios from "axios";
 
 interface MemberFormProps {
   editingMember: Member | null;
@@ -9,78 +9,109 @@ interface MemberFormProps {
   existingMembers: Member[];
 }
 
-const MemberForm: React.FC<MemberFormProps> = ({ editingMember, onSave, onCancel, existingMembers }) => {
+interface Region {
+  regionId: number;
+  code: string;
+  name: string;
+}
+
+const MemberForm: React.FC<MemberFormProps> = ({
+  editingMember,
+  onSave,
+  onCancel,
+  existingMembers,
+}) => {
   const [formData, setFormData] = useState<MemberFormData>({
     nikKtp: "",
     namaLengkap: "",
     alamatLengkap: "",
     wilayah: "",
-    nomorWhatsapp: "",
+    nomorWhatsapp: ""
   });
 
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [loadingRegions, setLoadingRegions] = useState(true);
   const [errors, setErrors] = useState<MemberFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uniqueId, setUniqueId] = useState("");
 
+  // Fetch region dari API
   useEffect(() => {
-    if (editingMember) {
-      setFormData({
-        nikKtp: editingMember.nikKtp,
-        namaLengkap: editingMember.namaLengkap,
-        alamatLengkap: editingMember.alamatLengkap,
-        wilayah: editingMember.wilayah,
-        nomorWhatsapp: editingMember.nomorWhatsapp,
-      });
-      setUniqueId(editingMember.id);
-    } else {
-      setFormData({
-        nikKtp: "",
-        namaLengkap: "",
-        alamatLengkap: "",
-        wilayah: "",
-        nomorWhatsapp: "",
-      });
-      setUniqueId("");
-    }
-  }, [editingMember]);
+    const fetchRegions = async () => {
+      try {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/region`);
+        if (res.data.success && res.data.data.region) {
+          setRegions(res.data.data.region);
+        }
+      } catch (error) {
+        console.error("Gagal ambil data region", error);
+      } finally {
+        setLoadingRegions(false);
+      }
+    };
+    fetchRegions();
+  }, []);
 
-  const generateUniqueId = (wilayah: WilayahCode): string => {
-    if (!wilayah) return "";
+useEffect(() => {
+  if (editingMember) {
+    setFormData({
+      nikKtp: editingMember.nikKtp,
+      namaLengkap: editingMember.namaLengkap,
+      alamatLengkap: editingMember.alamatLengkap,
+      wilayah: editingMember.wilayah,
+      nomorWhatsapp: editingMember.nomorWhatsapp,
+    });
+    // console.log('sdaas', editingMember.id);
+  } else {
+    setFormData({
+      nikKtp: "",
+      namaLengkap: "",
+      alamatLengkap: "",
+      wilayah: "",
+      nomorWhatsapp: "",
+    });
+  }
+}, [editingMember]);
 
-    // Hitung jumlah anggota yang sudah ada untuk wilayah ini
-    const existingCount = existingMembers.filter((member) => member.wilayah === wilayah && member.id !== editingMember?.id).length;
+useEffect(() => {
+  if (!editingMember && regions.length > 0 && formData.wilayah) {
+    const newUniqueId = generateUniqueId(formData.wilayah);
+    setUniqueId(newUniqueId);
+  }
+}, [regions, formData.wilayah, editingMember]);
 
+
+  const generateUniqueId = (wilayahId: string): string => {
+    if (!wilayahId) return "";
+    const region = regions.find((r) => String(r.regionId) === wilayahId); 
+    if (!region) return "";
+
+    const existingCount = existingMembers.filter(
+      (member) => member.wilayah === wilayahId && member.id !== editingMember?.id
+    ).length;
     const nextNumber = existingCount + 1;
-    return `${wilayah}-${nextNumber.toString().padStart(4, "0")}`;
+    return `${region.code}-${nextNumber.toString().padStart(4, "0")}`; 
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
 
-    // Validasi NIK KTP - hanya angka
-    if (name === "nikKtp") {
+    if (name === "nikKtp" || name === "nomorWhatsapp") {
       const numericValue = value.replace(/\D/g, "");
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
-    }
-    // Validasi nomor WhatsApp - hanya angka
-    else if (name === "nomorWhatsapp") {
-      const numericValue = value.replace(/\D/g, "");
-      setFormData((prev) => ({ ...prev, [name]: numericValue }));
-    }
-    // Input lainnya
-    else {
+    } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
 
-    // Generate unique ID ketika wilayah dipilih (hanya untuk member baru)
     if (name === "wilayah" && value && !editingMember) {
-      const newUniqueId = generateUniqueId(value as WilayahCode);
+      const newUniqueId = generateUniqueId(value);
       setUniqueId(newUniqueId);
     } else if (name === "wilayah" && !value && !editingMember) {
       setUniqueId("");
     }
 
-    // Clear error untuk field yang sedang diisi
     if (errors[name as keyof MemberFormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -88,47 +119,43 @@ const MemberForm: React.FC<MemberFormProps> = ({ editingMember, onSave, onCancel
 
   const validateForm = (): MemberFormErrors => {
     const newErrors: MemberFormErrors = {};
-
-    // Validasi NIK KTP
     if (!formData.nikKtp) {
       newErrors.nikKtp = "NIK KTP wajib diisi";
     } else if (formData.nikKtp.length !== 16) {
       newErrors.nikKtp = "NIK KTP harus 16 digit";
     } else {
-      // Check duplikasi NIK (kecuali saat edit member yang sama)
-      const isDuplicate = existingMembers.some((member) => member.nikKtp === formData.nikKtp && member.id !== editingMember?.id);
+      const isDuplicate = existingMembers.some(
+        (member) => member.nikKtp === formData.nikKtp && member.id !== editingMember?.id
+      );
       if (isDuplicate) {
         newErrors.nikKtp = "NIK KTP sudah terdaftar";
       }
     }
 
-    // Validasi Nama Lengkap
     if (!formData.namaLengkap.trim()) {
       newErrors.namaLengkap = "Nama lengkap wajib diisi";
     } else if (formData.namaLengkap.trim().length < 3) {
       newErrors.namaLengkap = "Nama lengkap minimal 3 karakter";
     }
 
-    // Validasi Alamat Lengkap
     if (!formData.alamatLengkap.trim()) {
       newErrors.alamatLengkap = "Alamat lengkap wajib diisi";
     } else if (formData.alamatLengkap.trim().length < 10) {
       newErrors.alamatLengkap = "Alamat lengkap minimal 10 karakter";
     }
 
-    // Validasi Wilayah
     if (!formData.wilayah) {
       newErrors.wilayah = "Wilayah wajib dipilih";
     }
 
-    // Validasi Nomor WhatsApp
     if (!formData.nomorWhatsapp) {
       newErrors.nomorWhatsapp = "Nomor WhatsApp wajib diisi";
     } else if (formData.nomorWhatsapp.length < 10 || formData.nomorWhatsapp.length > 15) {
       newErrors.nomorWhatsapp = "Nomor WhatsApp harus 10-15 digit";
     } else {
-      // Check duplikasi WhatsApp (kecuali saat edit member yang sama)
-      const isDuplicate = existingMembers.some((member) => member.nomorWhatsapp === formData.nomorWhatsapp && member.id !== editingMember?.id);
+      const isDuplicate = existingMembers.some(
+        (member) => member.nomorWhatsapp === formData.nomorWhatsapp && member.id !== editingMember?.id
+      );
       if (isDuplicate) {
         newErrors.nomorWhatsapp = "Nomor WhatsApp sudah terdaftar";
       }
@@ -137,38 +164,80 @@ const MemberForm: React.FC<MemberFormProps> = ({ editingMember, onSave, onCancel
     return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const formErrors = validateForm();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
-      return;
-    }
+  const formErrors = validateForm();
+  if (Object.keys(formErrors).length > 0) {
+    setErrors(formErrors);
+    return;
+  }
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
 
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+try {
+  const token = localStorage.getItem("admin_token");
 
-      const wilayahOption = wilayahOptions.find((option) => option.value === formData.wilayah);
+  if (!token) {
+    alert("Token tidak ditemukan. Silakan login ulang.");
+    return;
+  }
 
-      const memberData: Partial<Member> = {
-        ...formData,
-        id: editingMember ? editingMember.id : uniqueId,
-        wilayahName: wilayahOption?.label || "",
-        registrationDate: editingMember ? editingMember.registrationDate : new Date().toISOString().split("T")[0],
-        status: editingMember ? editingMember.status : "active",
-      };
-
-      onSave(memberData);
-    } catch (error) {
-      alert("Terjadi kesalahan. Silakan coba lagi.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const payload = {
+    region_id: Number(formData.wilayah),
+    nik: formData.nikKtp,
+    name: formData.namaLengkap,
+    phone: formData.nomorWhatsapp,
+    address: formData.alamatLengkap,
   };
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+
+  let res;
+
+  if (editingMember) {
+    // UPDATE
+    res = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/people/member/update/${editingMember.id}`,
+      payload,
+      config
+    );
+  } else {
+    // CREATE
+    res = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/people/member/store`,
+      payload,
+      config
+    );
+  }
+
+  // Simpan ke state parent
+  const region = regions.find((r) => String(r.regionId) === formData.wilayah);
+  const memberData: Partial<Member> = {
+    ...formData,
+    id: res.data.data.member.memberId, // <- ID asli dari DB
+    memberCode: uniqueId,        // <- simpan code buat display
+    wilayahName: region?.name || "",
+    registrationDate: editingMember
+      ? editingMember.registrationDate
+      : new Date().toISOString().split("T")[0],
+  };
+
+  onSave(memberData);
+} catch (error) {
+  console.error("Gagal menyimpan member:", error);
+  alert("Terjadi kesalahan. Silakan coba lagi.");
+} finally {
+  setIsSubmitting(false);
+}
+
+};
+
+
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -180,14 +249,6 @@ const MemberForm: React.FC<MemberFormProps> = ({ editingMember, onSave, onCancel
       </div>
 
       <form onSubmit={handleSubmit} className="p-6">
-        {uniqueId && !editingMember && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-blue-800 font-medium">
-              ID Anggota yang akan diberikan: <span className="font-bold text-blue-900">{uniqueId}</span>
-            </p>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* NIK KTP */}
           <div className="md:col-span-2">
@@ -242,17 +303,29 @@ const MemberForm: React.FC<MemberFormProps> = ({ editingMember, onSave, onCancel
           </div>
 
           {/* Wilayah */}
-          <div>
-            <label htmlFor="wilayah" className="block text-sm font-medium text-gray-700 mb-2">
+            <div>
+            <label htmlFor="wilayah" className="block text-sm font-medium text-gray-800 mb-2">
               Wilayah <span className="text-red-500">*</span>
             </label>
-            <select id="wilayah" name="wilayah" value={formData.wilayah} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              {wilayahOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+           <select
+  id="wilayah"
+  name="wilayah"
+  value={formData.wilayah}
+  onChange={handleInputChange}
+  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 bg-white"
+>
+  <option value="">Pilih Wilayah</option>
+  {loadingRegions ? (
+    <option value="">Loading...</option>
+  ) : (
+    regions.map((region) => (
+      <option key={region.regionId} value={String(region.regionId)}>
+        {region.name} ({region.code})
+      </option>
+    ))
+  )}
+</select>
+
             {errors.wilayah && <p className="text-red-500 text-sm mt-1">{errors.wilayah}</p>}
           </div>
 

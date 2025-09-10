@@ -5,7 +5,7 @@ import { Member } from "../../types/member";
 interface MemberTableProps {
   members: Member[];
   onEdit: (member: Member) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
   onStatusChange: (id: string, status: "active" | "inactive") => void;
 }
 
@@ -19,12 +19,30 @@ const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete, on
   const endIndex = startIndex + itemsPerPage;
   const currentMembers = members.slice(startIndex, endIndex);
 
-  const handleDelete = (member: Member) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus anggota ${member.namaLengkap}?`)) {
-      onDelete(member.id);
-    }
-  };
+  const handleDelete = async (member: Member) => {
+      if (window.confirm(`Apakah Anda yakin ingin menghapus anggota ${member.namaLengkap}?`)) {
+        try {
+          const token = localStorage.getItem("admin_token"); 
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/people/member/delete/${member.id}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`, 
+            },
+          });
 
+          if (!response.ok) {
+            throw new Error("Gagal menghapus anggota");
+          }
+
+          onDelete(member.id);
+          alert("Anggota berhasil dihapus");
+        } catch (error) {
+          console.error("Terjadi kesalahan:", error);
+          alert("Gagal menghapus anggota");
+        }
+      }
+    };
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("id-ID");
   };
@@ -54,7 +72,7 @@ const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete, on
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Anggota</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wilayah</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WhatsApp</th>
@@ -64,10 +82,10 @@ const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete, on
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {currentMembers.map((member) => (
+            {currentMembers.map((member, index) => (
               <tr key={member.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-blue-600">{member.id}</div>
+                  <div className="text-sm font-medium text-blue-600">{index + 1}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
@@ -85,10 +103,7 @@ const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete, on
                   <div className="text-sm text-gray-900">{formatDate(member.registrationDate)}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <select value={member.status} onChange={(e) => onStatusChange(member.id, e.target.value as "active" | "inactive")} className={`${getStatusBadge(member.status)} border-0 bg-transparent focus:ring-0 cursor-pointer`}>
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Tidak Aktif</option>
-                  </select>
+                  <div className="text-sm text-green-600">{member.status}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                   <button onClick={() => onEdit(member)} className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition-colors">
