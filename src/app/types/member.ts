@@ -10,6 +10,7 @@ export interface Member {
   nomorWhatsapp: string;
   registrationDate: string;
   status: "active" | "inactive";
+  gender?: number;
 }
 
 export interface MemberFormData {
@@ -18,6 +19,7 @@ export interface MemberFormData {
   alamatLengkap: string;
   wilayah: string;
   nomorWhatsapp: string;
+  gender?: number, 
 }
 
 export interface MemberFormErrors {
@@ -26,6 +28,7 @@ export interface MemberFormErrors {
   alamatLengkap?: string;
   wilayah?: string;
   nomorWhatsapp?: string;
+  gender?: string; 
 }
 
 export interface WilayahCounters {

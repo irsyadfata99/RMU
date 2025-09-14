@@ -26,7 +26,8 @@ const MemberForm: React.FC<MemberFormProps> = ({
     namaLengkap: "",
     alamatLengkap: "",
     wilayah: "",
-    nomorWhatsapp: ""
+    nomorWhatsapp: "",
+    gender: 1, 
   });
 
   const [regions, setRegions] = useState<Region[]>([]);
@@ -52,26 +53,27 @@ const MemberForm: React.FC<MemberFormProps> = ({
     fetchRegions();
   }, []);
 
-useEffect(() => {
-  if (editingMember) {
-    setFormData({
-      nikKtp: editingMember.nikKtp,
-      namaLengkap: editingMember.namaLengkap,
-      alamatLengkap: editingMember.alamatLengkap,
-      wilayah: editingMember.wilayah,
-      nomorWhatsapp: editingMember.nomorWhatsapp,
-    });
-    // console.log('sdaas', editingMember.id);
-  } else {
-    setFormData({
-      nikKtp: "",
-      namaLengkap: "",
-      alamatLengkap: "",
-      wilayah: "",
-      nomorWhatsapp: "",
-    });
-  }
-}, [editingMember]);
+  useEffect(() => {
+    if (editingMember) {
+      setFormData({
+        nikKtp: editingMember.nikKtp,
+        namaLengkap: editingMember.namaLengkap,
+        alamatLengkap: editingMember.alamatLengkap,
+        wilayah: editingMember.wilayah,
+        nomorWhatsapp: editingMember.nomorWhatsapp,
+        gender: editingMember.gender ?? 1, 
+      });
+    } else {
+      setFormData({
+        nikKtp: "",
+        namaLengkap: "",
+        alamatLengkap: "",
+        wilayah: "",
+        nomorWhatsapp: "",
+        gender: 1, 
+      });
+    }
+  }, [editingMember]);
 
 useEffect(() => {
   if (!editingMember && regions.length > 0 && formData.wilayah) {
@@ -101,6 +103,8 @@ useEffect(() => {
     if (name === "nikKtp" || name === "nomorWhatsapp") {
       const numericValue = value.replace(/\D/g, "");
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
+    } else if (name === "gender") {
+      setFormData((prev) => ({ ...prev, gender: parseInt(value, 10) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -116,6 +120,7 @@ useEffect(() => {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
+
 
   const validateForm = (): MemberFormErrors => {
     const newErrors: MemberFormErrors = {};
@@ -160,6 +165,10 @@ useEffect(() => {
         newErrors.nomorWhatsapp = "Nomor WhatsApp sudah terdaftar";
       }
     }
+    if (formData.gender !== 1 && formData.gender !== 2) {
+      newErrors.gender = "Pilih jenis kelamin yang valid";
+    }
+
 
     return newErrors;
   };
@@ -189,6 +198,7 @@ try {
     name: formData.namaLengkap,
     phone: formData.nomorWhatsapp,
     address: formData.alamatLengkap,
+    gender: formData.gender ?? null,
   };
 
   const config = {
@@ -307,24 +317,24 @@ try {
             <label htmlFor="wilayah" className="block text-sm font-medium text-gray-800 mb-2">
               Wilayah <span className="text-red-500">*</span>
             </label>
-           <select
-  id="wilayah"
-  name="wilayah"
-  value={formData.wilayah}
-  onChange={handleInputChange}
-  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 bg-white"
->
-  <option value="">Pilih Wilayah</option>
-  {loadingRegions ? (
-    <option value="">Loading...</option>
-  ) : (
-    regions.map((region) => (
-      <option key={region.regionId} value={String(region.regionId)}>
-        {region.name} ({region.code})
-      </option>
-    ))
-  )}
-</select>
+            <select
+              id="wilayah"
+              name="wilayah"
+              value={formData.wilayah}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 bg-white"
+            >
+              <option value="">Pilih Wilayah</option>
+              {loadingRegions ? (
+                <option value="">Loading...</option>
+              ) : (
+                regions.map((region) => (
+                  <option key={region.regionId} value={String(region.regionId)}>
+                    {region.name} ({region.code})
+                  </option>
+                ))
+              )}
+            </select>
 
             {errors.wilayah && <p className="text-red-500 text-sm mt-1">{errors.wilayah}</p>}
           </div>
@@ -346,6 +356,24 @@ try {
             />
             {errors.nomorWhatsapp && <p className="text-red-500 text-sm mt-1">{errors.nomorWhatsapp}</p>}
           </div>
+
+          {/* Gender */}
+          <div>
+            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+              Jenis Kelamin
+            </label>
+            <select
+              id="gender"
+              name="gender"
+              value={formData.gender}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800"
+            >
+              <option value={1}>Laki-laki</option>
+              <option value={2}>Perempuan</option>
+            </select>
+          </div>
+
         </div>
 
         {/* Submit Buttons */}

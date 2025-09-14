@@ -14,6 +14,7 @@ interface FormData {
   alamatLengkap: string;
   wilayah: string; 
   nomorWhatsapp: string;
+  gender: string;
 }
 
 interface FormErrors {
@@ -22,6 +23,7 @@ interface FormErrors {
   alamatLengkap?: string;
   wilayah?: string;
   nomorWhatsapp?: string;
+  gender?: string;
 }
 
 interface WilayahCounters {
@@ -47,6 +49,7 @@ export default function DaftarAnggota() {
     alamatLengkap: "",
     wilayah: "",
     nomorWhatsapp: "",
+    gender: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -158,6 +161,10 @@ export default function DaftarAnggota() {
       newErrors.nomorWhatsapp = "Nomor WhatsApp harus 10-15 digit";
     }
 
+    if (!formData.gender) {
+      newErrors.gender = "Jenis kelamin wajib dipilih";
+    }
+
     return newErrors;
   };
 
@@ -178,6 +185,7 @@ export default function DaftarAnggota() {
         nik: formData.nikKtp,
         phone: formData.nomorWhatsapp,
         address: formData.alamatLengkap,
+        gender: Number(formData.gender),
       };
 
       const res = await axios.post(
@@ -192,6 +200,7 @@ export default function DaftarAnggota() {
           alamatLengkap: "",
           wilayah: "",
           nomorWhatsapp: "",
+          gender: "",
         });
         setUniqueId("");
         setErrors({});
@@ -210,6 +219,7 @@ export default function DaftarAnggota() {
           region_id: "wilayah",
           name: "namaLengkap",
           address: "alamatLengkap",
+          gender: "gender",
         };
 
         const newErrors: FormErrors = {};
@@ -371,6 +381,29 @@ export default function DaftarAnggota() {
                 </p>
               )}
             </div>
+
+            <div>
+            <label
+              htmlFor="gender"
+              className="block text-sm font-medium text-gray-800 mb-2"
+            >
+              Jenis Kelamin <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="gender"
+              name="gender"
+              value={formData.gender}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 bg-white"
+            >
+              <option value="">Pilih Jenis Kelamin</option>
+              <option value="1">Laki-laki</option>
+              <option value="2">Perempuan</option>
+            </select>
+            {errors.gender && (
+              <p className="text-red-500 text-sm mt-1">{errors.gender}</p>
+            )}
+          </div>
 
             {/* Submit Button */}
             <div className="pt-4">

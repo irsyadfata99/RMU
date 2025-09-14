@@ -51,7 +51,8 @@ const MemberManagement: React.FC<MemberManagementProps> = ({ currentUser }) => {
           registrationDate: m.registered_at
             ? m.registered_at.split("T")[0]
             : "",
-          status: m.status === 1 ? "active" : "inactive", 
+          status: m.status === 1 ? "active" : "inactive",
+          gender: m.gender, 
         }));
         // console.log('wilayah', mappedMembers)
 
@@ -165,7 +166,6 @@ const MemberManagement: React.FC<MemberManagementProps> = ({ currentUser }) => {
         <MemberForm
           editingMember={editingMember}
           onSave={(m) => {
-            // kalau masih mau tambah manual ke local FE
             const newMember: Member = {
               id: editingMember ? editingMember.id : Number(m.id), 
               memberCode: m.memberCode || "",
@@ -178,6 +178,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({ currentUser }) => {
               registrationDate:
                 m.registrationDate || new Date().toISOString().split("T")[0],
               status: "active", 
+              gender: m.gender,
             };
             setMembers(
               editingMember

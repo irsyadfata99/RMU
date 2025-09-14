@@ -74,6 +74,7 @@ const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete, on
             <tr>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Kelamin</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wilayah</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WhatsApp</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Daftar</th>
@@ -91,6 +92,11 @@ const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete, on
                   <div>
                     <div className="text-sm font-medium text-gray-900">{member.namaLengkap}</div>
                     <div className="text-sm text-gray-500">NIK: {member.nikKtp}</div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {member.gender === 1 ? "Laki-laki" : member.gender === 2 ? "Perempuan" : "-"}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
