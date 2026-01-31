@@ -4,122 +4,84 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import FrontHeader from "../../components/Navbar";
 import FrontFooter from "../../components/Footer";
-import { beritaService, type BeritaItem } from "../../../lib/api/berita";
+import { Article, CategoryPost } from "@/app/models/artikel/artikel/artikel";
+import { getOptions } from "@/lib/api/kategori";
+import { getBeritaPublish } from "@/lib/api/article";
+import Pagination from "@/app/components/pagination";
+import { ArticleFE, ArticleUI } from "@/app/types/article";
 
 const BeritaPage = () => {
-  const [beritaList, setBeritaList] = useState<BeritaItem[]>([]);
-  const [filteredBerita, setFilteredBerita] = useState<BeritaItem[]>([]);
+  const [beritaList, setBeritaList]             = useState<ArticleFE[]>([]);
+  const [searchQuery, setSearchQuery]           = useState<string>("");
+  const [categories, setCategories]             = useState<CategoryPost[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("semua");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [categories, setCategories] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading]               = useState(true);
+  const [error, setError]                       = useState<string | null>(null);
+  const [currentPage, setCurrentPage]           = useState(1);
+  const [totalPages, setTotalPages]             = useState(1);
+  const [totalItems, setTotalItems]             = useState(0);
 
-  // Load categories on component mount
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const categoriesData = await beritaService.getCategories();
-        setCategories(["Semua", ...categoriesData]);
+        const res = await getOptions();
+
+        setCategories(res);
       } catch (error) {
         console.error("Error loading categories:", error);
-        // Fallback to default categories
-        setCategories(["Semua", "Pendidikan", "Sosial", "Ekonomi", "Kesehatan", "Seni Budaya", "Kepemudaan"]);
       }
     };
 
     loadCategories();
   }, []);
 
-  // Load berita data
   useEffect(() => {
     const fetchBerita = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+  try {
+    setIsLoading(true);
+    setError(null);
 
-        const params = {
-          page: currentPage,
-          per_page: 12,
-          category: selectedCategory,
-          search: searchQuery || undefined,
-        };
+    const response = await getBeritaPublish({
+      page: currentPage,
+      search: searchQuery || undefined,
+      category_id: selectedCategory === "semua" ? undefined : selectedCategory,
+    });
 
-        const response = await beritaService.getBerita(params);
+    const result = response.data.data;
 
-        setBeritaList(response.data);
-        setFilteredBerita(response.data);
+    const mappedData = (result?.data ?? []).map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      date: item.date,
+      slug: item.slug,
+      image: `${process.env.NEXT_PUBLIC_API_UPLOAD}/uploads/articles/${item.thumbImage}`,
+      excerpt: item.excerpt,
+      category: item.CategoryPost?.name ?? "-",
+      author: item.User?.name ?? "-",
+      publishedAt: item.date,
+      featured: false, 
+      readTime: Math.ceil((item.content?.length ?? 0) / 1000),
+      tags: item.TagPosts?.map((t: any) => t.name) ?? [],
+    }));
 
-        if (response.meta) {
-          setTotalPages(response.meta.last_page);
-        }
-      } catch (error) {
-        console.error("Error fetching berita:", error);
-        setError("Gagal memuat berita. Silakan coba lagi.");
+    setBeritaList(mappedData);
+    setTotalPages(result?.pagination?.totalPages ?? 1);
+    setTotalItems(result?.pagination?.total ?? 0);
 
-        // Fallback to mock data for development
-        const mockBerita: BeritaItem[] = [
-          {
-            id: 1,
-            title: "Program Beasiswa RMU Tahun 2024 Dibuka untuk 1000 Siswa Berprestasi",
-            excerpt: "Reksa Mahardhika Unggul membuka program beasiswa untuk siswa kurang mampu namun berprestasi di seluruh Indonesia.",
-            content: "Lorem ipsum dolor sit amet...",
-            image: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&h=400&fit=crop",
-            author: "Tim Humas RMU",
-            publishedAt: "2024-01-15",
-            category: "Pendidikan",
-            readTime: 5,
-            tags: ["Beasiswa", "Pendidikan", "Siswa"],
-            featured: true,
-          },
-          {
-            id: 2,
-            title: "Bantuan Sosial untuk Korban Bencana Alam di Jawa Barat",
-            excerpt: "Tim relawan RMU menyalurkan bantuan kepada masyarakat terdampak banjir di wilayah Jawa Barat.",
-            content: "Lorem ipsum dolor sit amet...",
-            image: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=400&fit=crop",
-            author: "Divisi Sosial",
-            publishedAt: "2024-01-12",
-            category: "Sosial",
-            readTime: 4,
-            tags: ["Bantuan", "Bencana", "Sosial"],
-            featured: false,
-          },
-          {
-            id: 3,
-            title: "Workshop Entrepreneurship untuk Pengembangan UMKM Lokal",
-            excerpt: "RMU mengadakan pelatihan kewirausahaan untuk meningkatkan kapasitas pelaku UMKM di berbagai daerah.",
-            content: "Lorem ipsum dolor sit amet...",
-            image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=400&fit=crop",
-            author: "Divisi Ekonomi",
-            publishedAt: "2024-01-10",
-            category: "Ekonomi",
-            readTime: 6,
-            tags: ["UMKM", "Workshop", "Ekonomi"],
-            featured: true,
-          },
-        ];
 
-        setBeritaList(mockBerita);
-        setFilteredBerita(mockBerita);
-        setError(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  } catch (error) {
+    console.error(error);
+    setError("Gagal memuat berita. Silakan coba lagi.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    // Add debounce for search
-    const timeoutId = setTimeout(
-      () => {
-        fetchBerita();
-      },
-      searchQuery ? 500 : 0
-    );
 
+    const timeoutId = setTimeout(() => fetchBerita(), searchQuery ? 500 : 0);
     return () => clearTimeout(timeoutId);
   }, [selectedCategory, searchQuery, currentPage]);
+
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -143,9 +105,10 @@ const BeritaPage = () => {
   };
 
   const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category.toLowerCase());
+    setSelectedCategory(category);
     setCurrentPage(1);
   };
+
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -172,9 +135,8 @@ const BeritaPage = () => {
     );
   }
 
-  const featuredNews = filteredBerita.filter((item) => item.featured);
-  const regularNews = filteredBerita.filter((item) => !item.featured);
-
+  const featuredNews = beritaList.slice(0, 2);
+  const regularNews = beritaList.slice(2);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <FrontHeader />
@@ -221,17 +183,33 @@ const BeritaPage = () => {
               </div>
 
               {/* Category Filter */}
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => handleCategoryChange(category)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${selectedCategory === category.toLowerCase() ? "bg-blue-600 text-white shadow-lg" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => handleCategoryChange("semua")}
+                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  selectedCategory === "semua"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                Semua
+              </button>
+
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategoryChange(category.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium ${
+                    selectedCategory === category.id
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+
             </div>
           </div>
 
@@ -243,8 +221,15 @@ const BeritaPage = () => {
                 Berita Utama
               </h2>
               <div className="grid lg:grid-cols-2 gap-8">
-                {featuredNews.slice(0, 2).map((item) => (
-                  <Link href={`/berita/${item.id}`} key={item.id}>
+               {featuredNews.slice(0, 2).map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/berita/${item.id}`}
+                      onClick={() =>
+                        sessionStorage.setItem("currentArticle", JSON.stringify(item))
+                      }
+                    >
+
                     <div className="group bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300">
                       <div className="relative h-64 overflow-hidden">
                         <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -255,7 +240,7 @@ const BeritaPage = () => {
                         <div className="flex items-center text-sm text-gray-500 mb-3">
                           <span>{item.author}</span>
                           <span className="mx-2">•</span>
-                          <span>{formatDate(item.publishedAt)}</span>
+                          <span>{formatDate(item.date)}</span>
                           <span className="mx-2">•</span>
                           <span>{item.readTime} min baca</span>
                         </div>
@@ -290,7 +275,7 @@ const BeritaPage = () => {
                       </div>
                       <div className="p-5">
                         <div className="flex items-center text-xs text-gray-500 mb-2">
-                          <span>{formatDate(item.publishedAt)}</span>
+                          <span>{formatDate(item.date)}</span>
                           <span className="mx-2">•</span>
                           <span>{item.readTime} min</span>
                         </div>
@@ -312,49 +297,8 @@ const BeritaPage = () => {
             </div>
           )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-12">
-              <div className="flex items-center gap-2">
-                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <button key={pageNum} onClick={() => handlePageChange(pageNum)} className={`px-4 py-2 rounded-lg ${currentPage === pageNum ? "bg-blue-600 text-white" : "border border-gray-300 text-gray-500 hover:bg-gray-50"}`}>
-                      {pageNum}
-                    </button>
-                  );
-                })}
-
-                {totalPages > 5 && (
-                  <>
-                    <span className="px-2 text-gray-400">...</span>
-                    <button onClick={() => handlePageChange(totalPages)} className={`px-4 py-2 rounded-lg ${currentPage === totalPages ? "bg-blue-600 text-white" : "border border-gray-300 text-gray-500 hover:bg-gray-50"}`}>
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* No Results State */}
-          {filteredBerita.length === 0 && !isLoading && (
+          {beritaList.length === 0 && !isLoading &&  (
             <div className="text-center py-16">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,6 +324,14 @@ const BeritaPage = () => {
               </button>
             </div>
           )}
+
+          <Pagination
+            page={currentPage} 
+            totalPages={totalPages} 
+            totalItems={totalItems} 
+            onPageChange={handlePageChange}
+          />
+
         </div>
       </main>
 

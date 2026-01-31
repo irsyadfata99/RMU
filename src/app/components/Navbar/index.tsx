@@ -108,10 +108,6 @@ const navItems: NavItem[] = [
       },
     ],
   },
-  {
-    label: "Daftar anggota",
-    link: "/daftar-anggota",
-  },
 ];
 
 const FrontHeader = () => {

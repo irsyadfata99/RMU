@@ -5,9 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import FrontHeader from "../../components/Navbar";
 import FrontFooter from "../../components/Footer";
+import { getBeritaById, getBeritaPublish } from "@/lib/api/article";
+import { editorJsToHtml } from "@/lib/editorjs";
 
 interface BeritaItem {
-  id: number;
+  id: string;
   title: string;
   excerpt: string;
   content: string;
@@ -23,133 +25,86 @@ interface BeritaItem {
 const BeritaDetailPage = () => {
   const params = useParams();
   const router = useRouter();
-  const [berita, setBerita] = useState<BeritaItem | null>(null);
+  const [berita, setBerita]               = useState<BeritaItem | null>(null);
   const [relatedBerita, setRelatedBerita] = useState<BeritaItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Mock data - Replace with API call
-  const mockBerita: BeritaItem[] = [
-    {
-      id: 1,
-      title: "Program Beasiswa RMU Tahun 2024 Dibuka untuk 1000 Siswa Berprestasi",
-      excerpt: "Reksa Mahardhika Unggul membuka program beasiswa untuk siswa kurang mampu namun berprestasi di seluruh Indonesia.",
-      content: `
-        <div class="prose max-w-none">
-          <p>Reksa Mahardhika Unggul (RMU) dengan bangga mengumumkan pembukaan program beasiswa tahun 2024 yang akan memberikan kesempatan kepada 1000 siswa berprestasi dari keluarga kurang mampu untuk melanjutkan pendidikan mereka ke jenjang yang lebih tinggi.</p>
-          
-          <h3>Kriteria Penerima Beasiswa</h3>
-          <p>Program beasiswa ini ditujukan untuk siswa-siswi yang memenuhi kriteria sebagai berikut:</p>
-          <ul>
-            <li>Siswa SMA/SMK kelas 12 atau lulusan tahun 2023-2024</li>
-            <li>Memiliki prestasi akademik dengan rata-rata nilai minimal 8.0</li>
-            <li>Berasal dari keluarga dengan penghasilan maksimal Rp 3.000.000 per bulan</li>
-            <li>Aktif dalam kegiatan sosial atau organisasi di sekolah</li>
-            <li>Memiliki motivasi tinggi untuk mengembangkan diri</li>
-          </ul>
-          
-          <h3>Fasilitas yang Diberikan</h3>
-          <p>Penerima beasiswa akan mendapatkan fasilitas lengkap meliputi:</p>
-          <ul>
-            <li>Biaya kuliah penuh selama 4 tahun</li>
-            <li>Uang saku bulanan Rp 1.500.000</li>
-            <li>Tunjangan buku dan alat tulis</li>
-            <li>Program mentoring dan pengembangan karakter</li>
-            <li>Kesempatan magang di perusahaan partner</li>
-          </ul>
-          
-          <h3>Cara Pendaftaran</h3>
-          <p>Pendaftaran dapat dilakukan melalui website resmi RMU dengan mengupload dokumen yang diperlukan:</p>
-          <ol>
-            <li>Formulir pendaftaran yang telah diisi lengkap</li>
-            <li>Fotokopi rapor semester 1-5</li>
-            <li>Surat keterangan penghasilan orang tua</li>
-            <li>Surat rekomendasi dari sekolah</li>
-            <li>Essay motivasi maksimal 500 kata</li>
-          </ol>
-          
-          <p>Pendaftaran dibuka mulai tanggal 15 Januari 2024 dan ditutup pada 15 Maret 2024. Jangan lewatkan kesempatan emas ini untuk meraih masa depan yang lebih cerah!</p>
-        </div>
-      `,
-      image: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&h=400&fit=crop",
-      author: "Tim Humas RMU",
-      publishedAt: "2024-01-15",
-      category: "Pendidikan",
-      readTime: 5,
-      tags: ["Beasiswa", "Pendidikan", "Siswa"],
-      featured: true,
-    },
-    {
-      id: 2,
-      title: "Bantuan Sosial untuk Korban Bencana Alam di Jawa Barat",
-      excerpt: "Tim relawan RMU menyalurkan bantuan kepada masyarakat terdampak banjir di wilayah Jawa Barat.",
-      content: `
-        <div class="prose max-w-none">
-          <p>Tim relawan Reksa Mahardhika Unggul (RMU) bergerak cepat untuk memberikan bantuan kepada masyarakat yang terdampak banjir di beberapa wilayah Jawa Barat. Bencana yang terjadi akibat curah hujan tinggi ini telah menyebabkan ribuan keluarga kehilangan tempat tinggal dan harta benda.</p>
-          
-          <h3>Bantuan yang Disalurkan</h3>
-          <p>RMU telah menyalurkan berbagai jenis bantuan meliputi:</p>
-          <ul>
-            <li>Paket sembako untuk 500 keluarga</li>
-            <li>Air bersih dan obat-obatan</li>
-            <li>Perlengkapan bayi dan anak-anak</li>
-            <li>Tenda darurat dan selimut</li>
-            <li>Bantuan tunai untuk kebutuhan mendesak</li>
-          </ul>
-          
-          <h3>Koordinasi dengan Pemerintah Daerah</h3>
-          <p>Tim RMU bekerja sama dengan Pemerintah Daerah Jawa Barat dan BNPB untuk memastikan bantuan tersalur dengan tepat sasaran dan efektif.</p>
-          
-          <p>Masyarakat yang ingin ikut berpartisipasi dalam program bantuan ini dapat menghubungi kantor RMU atau melalui website resmi kami.</p>
-        </div>
-      `,
-      image: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=400&fit=crop",
-      author: "Divisi Sosial",
-      publishedAt: "2024-01-12",
-      category: "Sosial",
-      readTime: 4,
-      tags: ["Bantuan", "Bencana", "Sosial"],
-      featured: false,
-    },
-    // Add more mock data as needed
-  ];
+  const [isLoading, setIsLoading]         = useState(true);
+  const [error, setError]                 = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBerita = async () => {
       try {
         setIsLoading(true);
+        setError(null);
 
-        // TODO: Replace with actual API call
-        // const response = await fetch(`/api/berita/${params.id}`);
-        // const data = await response.json();
+        const detailRes = await getBeritaById(params.id as string);
+        const item = detailRes.data.data;
 
-        // Mock API call simulation
-        setTimeout(() => {
-          const foundBerita = mockBerita.find((item) => item.id === parseInt(params.id as string));
+        const mappedDetail: BeritaItem = {
+          id: item.id,
+          title: item.title,
+          excerpt: item.excerpt,
+          content: editorJsToHtml(
+            typeof item.content === "string"
+              ? JSON.parse(item.content)
+              : item.content
+          ),
+          image: `${process.env.NEXT_PUBLIC_API_UPLOAD}/uploads/articles/${item.thumbImage}`,
+          author: item.User?.name ?? "-",
+          publishedAt: item.date,
+          category: item.CategoryPost?.name ?? "-",
+          readTime: Math.ceil((item.content?.length ?? 0) / 1000),
+          tags: item.TagPosts?.map(t => t.name) ?? [],
+          featured: false,
+        };
 
-          if (foundBerita) {
-            setBerita(foundBerita);
+        setBerita(mappedDetail);
 
-            // Get related articles (same category, excluding current article)
-            const related = mockBerita.filter((item) => item.category === foundBerita.category && item.id !== foundBerita.id).slice(0, 3);
-            setRelatedBerita(related);
-          } else {
-            setError("Berita tidak ditemukan");
-          }
+        const relatedRes = await getBeritaPublish({
+          page: 1,
+          limit: 4, 
+          category_id: item.category_id,
+        });
 
-          setIsLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error("Error fetching berita:", error);
-        setError("Gagal memuat berita");
+        const relatedArticles = relatedRes.data.data.data ?? [];
+
+        const relatedMapped = relatedArticles
+          .filter(r => r.id !== item.id)
+          .slice(0, 3)
+          .map(r => ({
+            id: r.id,
+            title: r.title,
+            excerpt: r.excerpt,
+            content: r.content,
+            image: `${process.env.NEXT_PUBLIC_API_UPLOAD}/uploads/articles/${r.thumbImage}`,
+            author: r.User?.name ?? "-",
+            publishedAt: r.date,
+            category: r.CategoryPost?.name ?? "-",
+            readTime: Math.ceil((r.content?.length ?? 0) / 1000),
+            tags: r.TagPosts?.map(t => t.name) ?? [],
+            featured: false,
+          }));
+
+        setRelatedBerita(relatedMapped);
+
+      } catch (e) {
+        console.error(e);
+        setError("Berita tidak ditemukan");
+      } finally {
         setIsLoading(false);
       }
     };
 
-    if (params.id) {
-      fetchBerita();
-    }
+    if (params.id) fetchBerita();
   }, [params.id]);
+
+
+
+  useEffect(() => {
+    const cached = sessionStorage.getItem("currentArticle");
+    if (cached) {
+      setBerita(JSON.parse(cached));
+    }
+  }, []);
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -268,7 +223,10 @@ const BeritaDetailPage = () => {
               <p className="text-lg text-gray-600 leading-relaxed mb-8 border-l-4 border-blue-500 pl-4">{berita.excerpt}</p>
 
               {/* Content */}
-              <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: berita.content }} />
+              <div
+                className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: berita.content }}
+              />
 
               {/* Tags */}
               <div className="flex flex-wrap gap-2 mt-8 pt-8 border-t border-gray-200">

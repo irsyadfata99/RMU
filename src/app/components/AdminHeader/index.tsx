@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 interface User {
   id: number;
+  name: string;
   email: string;
   last_login_ip: string | null;
   last_login_device: string | null;
@@ -32,14 +33,14 @@ const AdminHeader = ({ currentUser }: AdminHeaderProps) => {
   const handleLogout = () => {
     localStorage.removeItem("admin_user");
     localStorage.removeItem("admin_token");
-    router.push("/admin/login");
+    router.push("/login");
   };
 
   // Ambil nama user yang paling tersedia
   const displayName =
-    currentUser?.email ||
-    (currentUser as any)?.admin?.name ||
-    currentUser?.email ||
+    currentUser?.name ||
+    (currentUser as any)?.name ||
+    currentUser?.name ||
     "User";
 
   const initial = displayName.charAt(0).toUpperCase();
@@ -60,7 +61,7 @@ const AdminHeader = ({ currentUser }: AdminHeaderProps) => {
               </div>
               <div>
                 <p className="font-medium text-gray-900">{displayName}</p>
-                <p className="text-xs text-gray-500 capitalize">{(currentUser as any)?.role ?? "guest"}</p>
+                <p className="text-xs text-gray-500 capitalize">{currentUser?.role ?? "guest"}</p>
               </div>
             </div>
 

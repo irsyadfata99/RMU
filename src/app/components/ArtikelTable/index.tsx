@@ -1,28 +1,40 @@
 "use client";
-
-interface Article {
-  id: number;
-  title: string;
-  excerpt: string;
-  content: string;
-  image: string;
-  author: string;
-  publishedAt: string;
-  category: string;
-  readTime: number;
-  tags: string[];
-  featured: boolean;
-  status: "draft" | "published";
-}
+import { useState } from "react";
+import { Icon } from "@iconify/react";
+import { useRouter } from "next/navigation";
+import { ArticleUI } from "@/app/types/article";
+import Pagination from "../pagination";
+import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ArticleTableProps {
-  articles: Article[];
-  onEdit: (article: Article) => void;
-  onDelete: (id: number) => void;
-  onShowForm: () => void;
+  articles: ArticleUI[];
+  onEdit: (article: ArticleUI) => void;
+  onPublish: (id: string) => void;
+  onDelete: (id: string) => void; 
+  page: number;
+  totalPages: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
 }
 
-const ArticleTable = ({ articles, onEdit, onDelete, onShowForm }: ArticleTableProps) => {
+const ArticleTable = ({
+  articles,
+  onEdit,
+  onDelete,
+  onPublish,
+  page,
+  totalPages,
+  totalItems,
+  onPageChange 
+}: ArticleTableProps) => {
+  const [openMenu, setOpenMenu]         = useState(false);
+  const [deleteId, setDeleteId]         = useState<string | null>(null);
+  const [isDeleting, setIsDeleting]     = useState(false);
+  const [publishId, setPublishId]       = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const router                          = useRouter();
+
   const getCategoryColor = (category: string) => {
     const colorMap: { [key: string]: string } = {
       Pendidikan: "bg-blue-100 text-blue-700",
@@ -39,26 +51,54 @@ const ArticleTable = ({ articles, onEdit, onDelete, onShowForm }: ArticleTablePr
     return new Date(dateString).toLocaleDateString("id-ID");
   };
 
-  const handleDelete = (id: number, title: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus artikel "${title}"?`)) {
-      onDelete(id);
-    }
-  };
-
   return (
     <>
       {/* Action Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Kelola Artikel</h2>
-        <button
-          onClick={onShowForm}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Buat Artikel Baru
-        </button>
+
+        <div className="relative">
+          <button
+            onClick={() => setOpenMenu(prev => !prev)}
+            className="p-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-300"
+            title="Kelola Artikel"
+          >
+            <Icon icon="solar:menu-dots-bold" className="w-6 h-6" />
+          </button>
+
+          <div
+            className={`absolute right-0 mt-3 w-56 rounded-xl bg-white shadow-lg z-50
+              transform transition-all duration-300 origin-top-right
+              ${openMenu
+                ? "opacity-100 scale-100 translate-y-0"
+                : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+              }`}
+          >
+            <button
+              onClick={() => { setOpenMenu(false); router.push("/admin/artikel/post"); }}
+              className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-gray-50 transition"
+            >
+              <Icon icon="solar:pen-new-square-bold" className="w-5 h-5 text-blue-600" />
+              Buat Artikel
+            </button>
+
+            <button
+              onClick={() => { setOpenMenu(false); router.push("/admin/artikel/kategori"); }}
+              className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-gray-50 transition"
+            >
+              <Icon icon="solar:folder-with-files-bold" className="w-5 h-5 text-green-600" />
+              Kategori Artikel
+            </button>
+
+            <button
+              onClick={() => { setOpenMenu(false); router.push("/admin/artikel/tag"); }}
+              className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-gray-50 transition"
+            >
+              <Icon icon="solar:tag-bold" className="w-5 h-5 text-purple-600" />
+              Tag Artikel
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Articles Table */}
@@ -75,7 +115,7 @@ const ArticleTable = ({ articles, onEdit, onDelete, onShowForm }: ArticleTablePr
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {articles.map((article) => (
+              {articles.map(article => (
                 <tr key={article.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
@@ -83,9 +123,7 @@ const ArticleTable = ({ articles, onEdit, onDelete, onShowForm }: ArticleTablePr
                         src={article.image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop"}
                         alt={article.title}
                         className="w-12 h-12 rounded-lg object-cover mr-4 shadow-sm"
-                        onError={(e) => {
-                          e.currentTarget.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop";
-                        }}
+                        onError={e => { e.currentTarget.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop"; }}
                       />
                       <div className="flex-1">
                         <p className="font-medium text-gray-900 line-clamp-1">{article.title}</p>
@@ -94,34 +132,40 @@ const ArticleTable = ({ articles, onEdit, onDelete, onShowForm }: ArticleTablePr
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(article.category)}`}>{article.category}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(article.category)}`}>
+                      {article.category}
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${article.status === "published" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
                         {article.status === "published" ? "Dipublikasi" : "Draft"}
                       </span>
-                      {article.featured && (
-                        <span className="text-yellow-500" title="Artikel Unggulan">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                          </svg>
-                        </span>
+                      {"featured" in article && article.featured && (
+                        <span className="text-yellow-500" title="Artikel Unggulan">⭐</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{formatDate(article.publishedAt)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{formatDate(article.createdAt)}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <button onClick={() => onEdit(article)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Artikel">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
+                        <Icon icon="solar:pen-bold" className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(article.id, article.title)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus Artikel">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+
+                        {article.status !== "published" && (
+                        <button
+                          onClick={() => setPublishId(article.id)} 
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Publish Artikel"
+                        >
+                          <Icon icon="solar:upload-bold" className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      <button onClick={() => setDeleteId(article.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus Artikel">
+                        <Icon icon="solar:trash-bin-trash-bold" className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -131,15 +175,91 @@ const ArticleTable = ({ articles, onEdit, onDelete, onShowForm }: ArticleTablePr
           </table>
         </div>
 
-        {articles.length === 0 && (
-          <div className="text-center py-12">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p className="text-gray-500 text-lg">Belum ada artikel</p>
-            <p className="text-gray-400 text-sm mt-1">Buat artikel pertama Anda dengan mengklik tombol di atas</p>
-          </div>
-        )}
+        <AnimatePresence>
+          {publishId && (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-white rounded-xl w-full max-w-sm p-6 space-y-4"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <h3 className="text-lg font-semibold text-gray-900">Publish Artikel?</h3>
+                <p className="text-sm text-gray-600">Artikel akan dipublikasi dan dapat dilihat semua orang.</p>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <button onClick={() => setPublishId(null)} disabled={isPublishing} className="px-4 py-2 rounded-lg border text-sm hover:bg-gray-50">Batal</button>
+                  <button onClick={async () => {
+                    try {
+                      setIsPublishing(true);
+                      await onPublish(publishId!);
+                      toast.success("Artikel berhasil dipublish");
+                      setPublishId(null);
+                    } catch {
+                      toast.error("Artikel gagal dipublish");
+                    } finally {
+                      setIsPublishing(false);
+                    }
+                  }}
+                    className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm hover:bg-green-700 disabled:opacity-60">
+                    {isPublishing ? "Memproses..." : "Publish"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {deleteId && (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-white rounded-xl w-full max-w-sm p-6 space-y-4"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <h3 className="text-lg font-semibold text-gray-900">Hapus Artikel?</h3>
+                <p className="text-sm text-gray-600">Artikel yang dihapus tidak dapat dikembalikan.</p>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <button onClick={() => setDeleteId(null)} disabled={isDeleting} className="px-4 py-2 rounded-lg border text-sm hover:bg-gray-50">Batal</button>
+                  <button onClick={async () => {
+                    try {
+                      setIsDeleting(true);
+                      await onDelete(deleteId!);
+                      toast.success("Artikel berhasil dihapus");
+                      setDeleteId(null);
+                    } catch {
+                      toast.error("Artikel gagal dihapus");
+                    } finally {
+                      setIsDeleting(false);
+                    }
+                  }}
+                    className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-60">
+                    {isDeleting ? "Menghapus..." : "Hapus"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="p-4">
+          <Pagination page={page} totalPages={totalPages} totalItems={totalItems} onPageChange={onPageChange} />
+        </div>
       </div>
     </>
   );

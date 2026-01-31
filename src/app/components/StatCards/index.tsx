@@ -1,13 +1,9 @@
 "use client";
 
-interface Article {
-  id: number;
-  status: "draft" | "published";
-  featured: boolean;
-}
+import { ArticleUI } from "@/app/types/article";
 
 interface StatCardsProps {
-  articles: Article[];
+  articles: ArticleUI[];
 }
 
 const StatCards = ({ articles }: StatCardsProps) => {

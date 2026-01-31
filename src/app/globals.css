@@ -104,3 +104,41 @@ body {
 .header-text a:hover {
   color: var(--color4) !important;
 }
+
+
+/* EditorJS content preview */
+.codex-editor__redactor h1 {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.codex-editor__redactor h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.codex-editor__redactor h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.codex-editor__redactor h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.codex-editor__redactor h5 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.codex-editor__redactor h6 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.codex-editor__redactor img {
+  max-width: 100%;
+  max-height: 150px;
+  object-fit: contain;
+}

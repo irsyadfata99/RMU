@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 
 interface LoginData {
-  email: string;
+  username: string;
   password: string;
 }
 
 const AdminLogin = () => {
   const router = useRouter();
   const [loginData, setLoginData] = useState<LoginData>({
-    email: "",
+    username: "",
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -24,8 +24,8 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
-        email: loginData.email,
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        username: loginData.username,
         password: loginData.password,
       });
 
@@ -39,7 +39,7 @@ const AdminLogin = () => {
 
         router.push("/admin/dashboard");
       } else {
-        setError(res.data.message || "Login gagal, cek kembali email & password!");
+        setError(res.data.message || "Login gagal, cek kembali username & password!");
       }
     } catch (err: any) {
       if (err.response && err.response.status === 422) {
@@ -70,13 +70,13 @@ const AdminLogin = () => {
 
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
                 <input
-                  type="email"
-                  value={loginData.email}
-                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                  type="text"
+                  value={loginData.username}
+                  onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                   className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Masukkan email"
+                  placeholder="Masukkan Username Anda"
                   required
                 />
               </div>
@@ -88,7 +88,7 @@ const AdminLogin = () => {
                   value={loginData.password}
                   onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                   className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Masukkan password"
+                  placeholder="Masukkan password Anda"
                   required
                 />
               </div>
