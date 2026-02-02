@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import AdminHeader from "../../components/AdminHeader";
 import StatCards from "../../components/StatCards";
 import ArticleTable from "../../components/ArtikelTable";
-import ArticleForm from "../artikel/post/page";
+import ArticleForm from "../artikel/post/ArticleForm";
 import MemberManagement from "../../components/Dashboard-Admin/MemberManagement";
 import { getBerita, getBeritaById, publishBerita, deleteBerita } from "@/lib/api/article";
 import { ArticleUI } from "@/app/types/article";
